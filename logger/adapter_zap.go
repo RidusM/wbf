@@ -2,7 +2,6 @@ package logger
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"go.uber.org/zap"
@@ -18,7 +17,7 @@ type ZapLogger struct {
 	level  zapcore.Level
 }
 
-func NewZapLogger(appName, env string) (*ZapLogger, error) {
+func NewZapLogger(appName, env string, opts ...Option) (*ZapLogger, error) {
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:       "ts",
 		LevelKey:      "level",
@@ -33,21 +32,18 @@ func NewZapLogger(appName, env string) (*ZapLogger, error) {
 		EncodeCaller:  zapcore.ShortCallerEncoder,
 	}
 
-	logger := &ZapLogger{
-		level: zapcore.InfoLevel,
+	cfg := defaultConfigs()
+	for _, opt := range opts {
+		opt(cfg)
 	}
 
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderConfig),
-		zapcore.NewMultiWriteSyncer(
-			zapcore.AddSync(os.Stdout),
-		),
-		zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-			return lvl >= logger.level
-		}),
+		zapcore.AddSync(cfg.GetWriter()),
+		toZapLevel(cfg.Level),
 	)
 
-	logger = &ZapLogger{
+	logger := &ZapLogger{
 		logger: zap.New(core,
 			zap.Fields(
 				zap.String("service", appName),
