@@ -10,17 +10,18 @@ type SlogAdapter struct {
 	logger *slog.Logger
 }
 
-func newSlogAdapter(opts ...Option) *SlogAdapter {
+func NewSlogAdapter(appName, env string, opts ...Option) *SlogAdapter {
 	cfg := defaultConfigs()
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	handler := slog.NewJSONHandler(cfg.GetWriter(), &slog.HandlerOptions{
-		Level: toSlogLevel(cfg.Level),
-	})
+	l := slog.New(slog.NewJSONHandler(cfg.GetWriter(), nil)).With(
+		slog.String("service", appName),
+		slog.String("env", env),
+	)
 
-	return &SlogAdapter{logger: slog.New(handler)}
+	return &SlogAdapter{logger: l}
 }
 
 func (a *SlogAdapter) Debug(msg string, args ...any) { a.logger.Debug(msg, args...) }

@@ -5,9 +5,17 @@ import (
 	"time"
 )
 
-type Level int
+type (
+	Level  int
+	Engine string
+)
 
 const (
+	ZapEngine     Engine = "zap"
+	SlogEngine    Engine = "slog"
+	ZerologEngine Engine = "zerolog"
+	LogrusEngine  Engine = "logrus"
+
 	DebugLevel Level = iota - 4
 	InfoLevel
 	WarnLevel
@@ -41,6 +49,21 @@ type (
 		LogAttrs(ctx context.Context, level Level, msg string, attrs ...Attr)
 	}
 )
+
+func InitLogger(engine Engine, appName, env string, opts ...Option) (Logger, error) {
+	switch engine {
+	case ZapEngine:
+		return NewZapAdapter(appName, env, opts...)
+	case SlogEngine:
+		return NewSlogAdapter(appName, env, opts...), nil
+	case ZerologEngine:
+		return NewZerologAdapter(appName, env, opts...), nil
+	case LogrusEngine:
+		return NewLogrusAdapter(appName, env, opts...), nil
+	default:
+		return NewSlogAdapter(appName, env, opts...), nil
+	}
+}
 
 func (l Level) String() string {
 	switch l {

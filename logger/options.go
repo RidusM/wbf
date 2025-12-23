@@ -9,6 +9,8 @@ import (
 
 type GlobalConfig struct {
 	Level      Level
+	AppName    string
+	Env        string
 	Filename   string
 	MaxSize    int
 	MaxBackups int
@@ -30,9 +32,7 @@ func defaultConfigs() *GlobalConfig {
 	}
 }
 
-func WithLevel(l Level) Option {
-	return func(c *GlobalConfig) { c.Level = l }
-}
+func WithLevel(l Level) Option { return func(c *GlobalConfig) { c.Level = l } }
 
 func WithRotation(filename string, maxSize, maxBackups, maxAge int) Option {
 	return func(c *GlobalConfig) {
@@ -43,30 +43,19 @@ func WithRotation(filename string, maxSize, maxBackups, maxAge int) Option {
 	}
 }
 
-func WithoutStdout() Option {
-	return func(c *GlobalConfig) { c.Stdout = false }
-}
-
 func (c *GlobalConfig) GetWriter() io.Writer {
 	var writers []io.Writer
-
 	if c.Stdout {
 		writers = append(writers, os.Stdout)
 	}
-
 	if c.Filename != "" {
-		lumber := &lumberjack.Logger{
+		writers = append(writers, &lumberjack.Logger{
 			Filename:   c.Filename,
 			MaxSize:    c.MaxSize,
 			MaxBackups: c.MaxBackups,
 			MaxAge:     c.MaxAge,
 			Compress:   c.Compress,
-		}
-		writers = append(writers, lumber)
-	}
-
-	if len(writers) == 0 {
-		return os.Stdout
+		})
 	}
 	return io.MultiWriter(writers...)
 }

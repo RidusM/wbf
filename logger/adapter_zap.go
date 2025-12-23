@@ -14,6 +14,7 @@ const (
 
 type ZapLogger struct {
 	logger *zap.Logger
+	sugar  *zap.SugaredLogger
 	level  zapcore.Level
 }
 
@@ -37,35 +38,35 @@ func NewZapLogger(appName, env string, opts ...Option) (*ZapLogger, error) {
 		opt(cfg)
 	}
 
+	zapLevel := toZapLevel(cfg.Level)
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderConfig),
 		zapcore.AddSync(cfg.GetWriter()),
-		toZapLevel(cfg.Level),
+		zapLevel,
 	)
 
-	logger := &ZapLogger{
-		logger: zap.New(core,
-			zap.Fields(
-				zap.String("service", appName),
-				zap.String("env", env),
-			),
-			zap.AddCaller(),
-			zap.AddStacktrace(zap.ErrorLevel),
+	l := zap.New(core,
+		zap.Fields(
+			zap.String("service", appName),
+			zap.String("env", env),
 		),
-	}
-	return logger, nil
-}
+		zap.AddCaller(),
+		zap.AddStacktrace(zap.ErrorLevel),
+	)
 
-func (l *ZapLogger) Zap() *zap.Logger {
-	return l.logger
+	return &ZapLogger{
+		logger: l,
+		sugar:  l.Sugar(),
+		level:  zapLevel,
+	}, nil
 }
 
 type ZapAdapter struct {
 	zapLogger *ZapLogger
 }
 
-func NewZapAdapter(appName, env string) (*ZapAdapter, error) {
-	zl, err := NewZapLogger(appName, env)
+func NewZapAdapter(appName, env string, opts ...Option) (*ZapAdapter, error) {
+	zl, err := NewZapLogger(appName, env, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,67 +74,78 @@ func NewZapAdapter(appName, env string) (*ZapAdapter, error) {
 }
 
 func (a *ZapAdapter) Debug(msg string, args ...any) {
-	a.zapLogger.Zap().Sugar().Debugw(msg, args...)
+	a.zapLogger.sugar.Debugw(msg, args...)
 }
 
 func (a *ZapAdapter) Info(msg string, args ...any) {
-	a.zapLogger.Zap().Sugar().Infow(msg, args...)
+	a.zapLogger.sugar.Infow(msg, args...)
 }
 
 func (a *ZapAdapter) Warn(msg string, args ...any) {
-	a.zapLogger.Zap().Sugar().Warnw(msg, args...)
+	a.zapLogger.sugar.Warnw(msg, args...)
 }
 
 func (a *ZapAdapter) Error(msg string, args ...any) {
-	a.zapLogger.Zap().Sugar().Errorw(msg, args...)
+	a.zapLogger.sugar.Errorw(msg, args...)
 }
 
 func (a *ZapAdapter) Debugw(msg string, args ...any) {
-	a.zapLogger.Zap().Sugar().Debugw(msg, args...)
+	a.zapLogger.sugar.Debugw(msg, args...)
 }
 
 func (a *ZapAdapter) Infow(msg string, args ...any) {
-	a.zapLogger.Zap().Sugar().Infow(msg, args...)
+	a.zapLogger.sugar.Infow(msg, args...)
 }
 
 func (a *ZapAdapter) Warnw(msg string, args ...any) {
-	a.zapLogger.Zap().Sugar().Warnw(msg, args...)
+	a.zapLogger.sugar.Warnw(msg, args...)
 }
 
 func (a *ZapAdapter) Errorw(msg string, args ...any) {
-	a.zapLogger.Zap().Sugar().Errorw(msg, args...)
+	a.zapLogger.sugar.Errorw(msg, args...)
 }
 
 func (a *ZapAdapter) Ctx(ctx context.Context) Logger {
 	requestID := GetRequestID(ctx)
-
 	if requestID == "" {
 		return a
 	}
 
+	newLogger := a.zapLogger.logger.With(zap.String("request_id", requestID))
 	return &ZapAdapter{
 		zapLogger: &ZapLogger{
-			logger: a.zapLogger.logger.With(zap.String("request_id", requestID)),
+			logger: newLogger,
+			sugar:  newLogger.Sugar(),
+			level:  a.zapLogger.level,
 		},
 	}
 }
 
 func (a *ZapAdapter) With(args ...any) Logger {
-	newAdapter := &ZapAdapter{zapLogger: &ZapLogger{}}
-	newAdapter.zapLogger.logger = a.zapLogger.Zap().With(toZapFields(args)...)
-	return newAdapter
+	newLogger := a.zapLogger.logger.With(toZapFields(args)...)
+	return &ZapAdapter{
+		zapLogger: &ZapLogger{
+			logger: newLogger,
+			sugar:  newLogger.Sugar(),
+			level:  a.zapLogger.level,
+		},
+	}
 }
 
 func (a *ZapAdapter) WithGroup(name string) Logger {
-	newAdapter := &ZapAdapter{zapLogger: &ZapLogger{}}
-	newAdapter.zapLogger.logger = a.zapLogger.Zap().With(zap.Namespace(name))
-	return newAdapter
+	newLogger := a.zapLogger.logger.With(zap.Namespace(name))
+	return &ZapAdapter{
+		zapLogger: &ZapLogger{
+			logger: newLogger,
+			sugar:  newLogger.Sugar(),
+			level:  a.zapLogger.level,
+		},
+	}
 }
 
 func (a *ZapAdapter) Log(level Level, msg string, attrs ...Attr) {
 	zapLevel := toZapLevel(level)
-
-	if ce := a.zapLogger.Zap().Check(zapLevel, msg); ce != nil {
+	if ce := a.zapLogger.logger.Check(zapLevel, msg); ce != nil {
 		ce.Write(toZapFieldsFromAttrs(attrs)...)
 	}
 }

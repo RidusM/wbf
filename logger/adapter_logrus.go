@@ -11,7 +11,7 @@ type LogrusAdapter struct {
 	entry *logrus.Entry
 }
 
-func NewLogrusAdapter(opts ...Option) *LogrusAdapter {
+func NewLogrusAdapter(appName, env string, opts ...Option) *LogrusAdapter {
 	cfg := defaultConfigs()
 	for _, opt := range opts {
 		opt(cfg)
@@ -21,15 +21,12 @@ func NewLogrusAdapter(opts ...Option) *LogrusAdapter {
 
 	l.SetOutput(cfg.GetWriter())
 
-	l.SetFormatter(&logrus.JSONFormatter{
-		TimestampFormat: time.RFC3339,
+	entry := l.WithFields(logrus.Fields{
+		"service": appName,
+		"env":     env,
 	})
 
-	l.SetLevel(toLogrusLevel(cfg.Level))
-
-	return &LogrusAdapter{
-		entry: logrus.NewEntry(l),
-	}
+	return &LogrusAdapter{entry: entry}
 }
 
 func (a *LogrusAdapter) Debug(msg string, args ...any) { a.entry.Debug(args...) }

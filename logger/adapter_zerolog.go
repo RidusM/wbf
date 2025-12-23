@@ -11,15 +11,17 @@ type ZerologAdapter struct {
 	l zerolog.Logger
 }
 
-func NewZerologAdapter(opts ...Option) *ZerologAdapter {
+func NewZerologAdapter(appName, env string, opts ...Option) *ZerologAdapter {
 	cfg := defaultConfigs()
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	zerolog.SetGlobalLevel(toZerologLevel(cfg.Level))
-
-	zl := zerolog.New(cfg.GetWriter()).With().Timestamp().Logger()
+	zl := zerolog.New(cfg.GetWriter()).With().
+		Timestamp().
+		Str("service", appName).
+		Str("env", env).
+		Logger()
 
 	return &ZerologAdapter{l: zl}
 }
