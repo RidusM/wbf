@@ -124,6 +124,12 @@ func (a *ZapAdapter) With(args ...any) Logger {
 	return newAdapter
 }
 
+func (a *ZapAdapter) WithGroup(name string) Logger {
+	newAdapter := &ZapAdapter{zapLogger: &ZapLogger{}}
+	newAdapter.zapLogger.logger = a.zapLogger.Zap().With(zap.Namespace(name))
+	return newAdapter
+}
+
 func (a *ZapAdapter) Log(level Level, msg string, attrs ...Attr) {
 	zapLevel := toZapLevel(level)
 

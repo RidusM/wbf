@@ -9,6 +9,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/rs/zerolog v1.30.0
 	github.com/segmentio/kafka-go v0.4.37
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.18.2
 	go.uber.org/zap v1.21.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1

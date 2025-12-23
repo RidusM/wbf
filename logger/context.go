@@ -6,11 +6,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type contextKey string
+type contextKey struct{}
 
-const (
-	requestIDKey contextKey = "request_id"
-)
+var requestIDKey = contextKey{}
 
 func SetRequestID(ctx context.Context, requestID string) context.Context {
 	return context.WithValue(ctx, requestIDKey, requestID)

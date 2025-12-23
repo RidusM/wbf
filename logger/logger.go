@@ -33,6 +33,7 @@ type (
 
 		Ctx(ctx context.Context) Logger
 		With(args ...any) Logger
+		WithGroup(name string) Logger
 
 		LogRequest(ctx context.Context, method, path string, status int, duration time.Duration)
 
