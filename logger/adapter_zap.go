@@ -11,7 +11,7 @@ import (
 const (
 	// _argsPairs indicates that key-value arguments are expected in pairs.
 	_argsPairs  = 2
-	_callerSkip = 1
+	_callerSkip = 4
 )
 
 // ZapLogger holds a zap.Logger instance along with its sugared version and effective log level.
