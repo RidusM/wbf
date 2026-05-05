@@ -7,7 +7,7 @@ import (
 	"time"
 
 	// Register PostgreSQL driver for database/sql.
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 	"github.com/wb-go/wbf/retry"
 )
 
@@ -223,4 +223,9 @@ func (db *DB) WithTxWithRetry(
 		return tx.Commit()
 	})
 	return err
+}
+
+// Array returns an object that can be passed to Scan for []string.
+func Array(a *[]string) any {
+	return pq.Array(a)
 }

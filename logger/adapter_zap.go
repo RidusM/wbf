@@ -10,7 +10,8 @@ import (
 
 const (
 	// _argsPairs indicates that key-value arguments are expected in pairs.
-	_argsPairs = 2
+	_argsPairs  = 2
+	_callerSkip = 1
 )
 
 // ZapLogger holds a zap.Logger instance along with its sugared version and effective log level.
@@ -50,6 +51,7 @@ func newZapLogger(appName, env string, cfg *GlobalConfig) *zap.Logger {
 			zap.String("env", env),
 		),
 		zap.AddCaller(),
+		zap.AddCallerSkip(_callerSkip),
 		zap.AddStacktrace(zap.ErrorLevel),
 	)
 }
