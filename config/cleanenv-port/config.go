@@ -49,7 +49,7 @@ func LoadPath(configPath string, cfg any) error {
 	}
 
 	if err := validate.Struct(cfg); err != nil {
-		return fmt.Errorf("%w: %w", ErrConfigValidation, formatValidationError(err))
+		return fmt.Errorf("%w", formatValidationError(err))
 	}
 
 	return nil
