@@ -66,7 +66,7 @@ func formatValidationError(err error) error {
 		}
 		return fmt.Errorf("%w: %s", ErrConfigValidation, strings.Join(msgs, "; "))
 	}
-	return fmt.Errorf("%w: %w", ErrConfigValidation, err)
+	return fmt.Errorf("%w", ErrConfigValidation)
 }
 
 // fetchConfigPath retrieves the configuration file path from the --config command-line flag.
