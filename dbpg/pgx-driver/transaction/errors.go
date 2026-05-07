@@ -22,55 +22,53 @@ var (
 
 // HandleError wraps a raw error with contextual information and maps PostgreSQL error codes
 // to semantic, user-friendly error types.
-// It takes the operation name (e.g., "transfer_funds"), a step description (e.g., "execute"),
+// It takes the  name (e.g., "transfer_funds"), a step description (e.g., "execute"),
 // and the original error, then returns a wrapped error suitable for logging or upstream handling.
 // If the input error is nil, it returns nil.
-func HandleError(operation string, err error) error {
+func HandleError(err error) error {
 	if err == nil {
 		return nil
 	}
 
 	if errors.Is(err, context.DeadlineExceeded) {
-		return fmt.Errorf("%s: timeout: %w", operation, ErrTransactionTimeout)
+		return fmt.Errorf("timeout: %w", ErrTransactionTimeout)
 	}
 
 	if errors.Is(err, context.Canceled) {
-		return fmt.Errorf("%s: canceled: %w", operation, err)
+		return fmt.Errorf("canceled: %w", err)
 	}
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case "40P01":
-			return fmt.Errorf("%s: deadlock: %w", operation, err)
+			return fmt.Errorf("deadlock: %w", err)
 		case "40001":
-			return fmt.Errorf("%s: serialization failure: %w", operation, err)
+			return fmt.Errorf("serialization failure: %w", err)
 		case "57014":
-			return fmt.Errorf("%s: statement timeout: %w", operation, err)
+			return fmt.Errorf("statement timeout: %w", err)
 		case "55P03":
-			return fmt.Errorf("%s: lock timeout: %w", operation, err)
+			return fmt.Errorf("lock timeout: %w", err)
 		case "23505":
 			return fmt.Errorf(
-				"%s: unique constraint violation: %w",
-				operation,
+				"unique constraint violation: %w",
 				ErrConflictingData,
 			)
 		case "23503":
 			return fmt.Errorf(
-				"%s: foreign key violation: %w",
-				operation,
+				"foreign key violation: %w",
 				ErrInvalidData,
 			)
 		}
 	}
 
 	if errors.Is(err, ErrMaxRetriesExceeded) {
-		return fmt.Errorf("%s: max retries exceeded: %w", operation, err)
+		return fmt.Errorf("max retries exceeded: %w", err)
 	}
 
 	if errors.Is(err, ErrTransactionTimeout) {
-		return fmt.Errorf("%s: transaction timeout: %w", operation, err)
+		return fmt.Errorf("transaction timeout: %w", err)
 	}
 
-	return fmt.Errorf("%s: %w", operation, err)
+	return fmt.Errorf("%w", err)
 }

@@ -129,7 +129,7 @@ func (tm *manager) doTransaction(ctx context.Context, tsName string, fn func(tx 
 	defer tm.safelyRollback(ctx, tx, tsName)
 
 	if err := fn(&pgxdriver.TxQueryExecuter{Tx: tx}); err != nil {
-		return HandleError(tsName, err)
+		return HandleError(err)
 	}
 
 	return tx.Commit(ctx)
